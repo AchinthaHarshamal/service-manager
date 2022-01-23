@@ -9,7 +9,7 @@ const authenticateToken = require('../middlewares/auth')
 // to get the service details (Admin)
 router.get('/profile_admin', authenticateToken, async (req, res) => {
     try {
-        const profile = await Service.findById(req.body.serviceId, 'name description categoryId rating reviewIds location')
+        const profile = await Service.findById(req.query.serviceId, 'name description categoryId rating reviewIds location')
             .populate('adminId', 'first_name last_name email')
             .populate('categoryId')
             .populate({
@@ -21,7 +21,7 @@ router.get('/profile_admin', authenticateToken, async (req, res) => {
                 }
             })
         res.json(profile)
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message })
     }
 })
@@ -29,7 +29,7 @@ router.get('/profile_admin', authenticateToken, async (req, res) => {
 // to get the service details
 router.get('/profile', authenticateToken, async (req, res) => {
     try {
-        const profile = await Service.findById(req.body.serviceId, 'name description categoryId rating reviewIds location')
+        const profile = await Service.findById(req.query.serviceId, 'name description categoryId rating reviewIds location')
             .populate('adminId', 'first_name last_name email')
             .populate('categoryId')
             .populate({
@@ -41,7 +41,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
                 }
             })
         res.json(profile)
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message })
     }
 })
@@ -53,7 +53,7 @@ router.get('/my', authenticateToken, async (req, res) => {
             .where('adminId').equals(req.userId)
             .select('name description rating')
         res.json(services)
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message })
     }
 })
