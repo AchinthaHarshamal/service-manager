@@ -63,18 +63,17 @@ router.get('/new', authenticateToken, async (req, res) => {
     try {
         const categories = await Category.find()
         res.json(categories)
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message })
     }
 })
 
 // to create a new service
 router.post('/new', authenticateToken, async (req, res) => {
-    // TODO: validate 'adminId' and 'categoryId'
     const service = new Service({
-        name: req.userId,
+        name: req.body.name,
         description: req.body.description,
-        adminId: req.body.adminId,
+        adminId: req.userId,
         categoryId: req.body.categoryId,
         rating: 0,
         noOfReviews: 0,
