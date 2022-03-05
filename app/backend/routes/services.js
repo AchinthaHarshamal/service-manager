@@ -3,12 +3,13 @@ const router = express.Router()
 
 const Service = require('../models/service')
 const Category = require('../models/category')
+const Booking = require('../models/booking')
 const authenticateToken = require('../middlewares/auth')
 
 // to get the service details (Admin)
 router.get('/profile_admin', authenticateToken, async (req, res) => {
     try {
-        const profile = await Service.findById(req.body.serviceId, 'name description categoryId rating reviewIds location')
+        const profile = await Service.findById(req.query.serviceId, 'name description categoryId rating reviewIds location')
             .populate('adminId', 'first_name last_name email')
             .populate('categoryId')
             .populate({
@@ -20,7 +21,7 @@ router.get('/profile_admin', authenticateToken, async (req, res) => {
                 }
             })
         res.json(profile)
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message })
     }
 })
@@ -28,7 +29,7 @@ router.get('/profile_admin', authenticateToken, async (req, res) => {
 // to get the service details
 router.get('/profile', authenticateToken, async (req, res) => {
     try {
-        const profile = await Service.findById(req.body.serviceId, 'name description categoryId rating reviewIds location')
+        const profile = await Service.findById(req.query.serviceId, 'name description categoryId rating reviewIds location')
             .populate('adminId', 'first_name last_name email')
             .populate('categoryId')
             .populate({
@@ -40,7 +41,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
                 }
             })
         res.json(profile)
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message })
     }
 })
@@ -52,7 +53,7 @@ router.get('/my', authenticateToken, async (req, res) => {
             .where('adminId').equals(req.userId)
             .select('name description rating')
         res.json(services)
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message })
     }
 })
@@ -62,18 +63,17 @@ router.get('/new', authenticateToken, async (req, res) => {
     try {
         const categories = await Category.find()
         res.json(categories)
-    } catch (error) {
+    } catch (err) {
         res.status(500).json({ message: err.message })
     }
 })
 
 // to create a new service
 router.post('/new', authenticateToken, async (req, res) => {
-    // TODO: validate 'adminId' and 'categoryId'
     const service = new Service({
-        name: req.userId,
+        name: req.body.name,
         description: req.body.description,
-        adminId: req.body.adminId,
+        adminId: req.userId,
         categoryId: req.body.categoryId,
         rating: 0,
         noOfReviews: 0,
@@ -96,6 +96,39 @@ router.put('/new', authenticateToken, async (req, res) => {
             description: req.body.description,
             categoryId: req.body.categoryId,
             location: req.body.location
+        })
+        res.status(201).json({ message: 'updated successfully!' })
+    } catch (err) {
+        res.status(400).json({ message: err.message })
+    }
+})
+
+// to book a service
+router.post('/book', authenticateToken, async (req, res) => {
+    const booking = new Booking({
+        userId: req.userId,
+        serviceId: req.body.serviceId,
+        description: req.body.description
+    })
+    try {
+        const newBooking = await booking.save()
+        
+        // appending the 'bookingIds' of the service
+        const service = await Service.findById(req.body.serviceId)
+        service.bookingIds.push(newBooking._id)
+
+        res.status(201).json(newBooking)
+    } catch (err) {
+        res.status(400).json({ message: err.message })
+    }
+})
+
+// to response to a booking
+router.put('/book', authenticateToken, async (req, res) => {
+    try {
+        await Booking.findByIdAndUpdate(req.body.bookingId, {
+            isReviewed: true,
+            isAccepted: req.body.isAccepted
         })
         res.status(201).json({ message: 'updated successfully!' })
     } catch (err) {
